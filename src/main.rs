@@ -10,6 +10,10 @@ fn main() {
         io::stdin()
             .read_line(&mut input)
             .expect("Couldn't read line");
+
+        if input.trim() == "exit" {
+            break;
+        }
         println!("{}: command not found", input.trim());
     }
 }
