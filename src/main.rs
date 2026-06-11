@@ -5,6 +5,10 @@ fn parse_input(input: &str) -> Vec<&str> {
     input.split_whitespace().collect()
 }
 
+fn builtin_output(arg: &str) {
+    println!("{arg} is a shell builtin");
+}
+
 fn main() {
     loop {
         print!("$ ");
@@ -15,13 +19,30 @@ fn main() {
             .read_line(&mut input)
             .expect("Couldn't read line");
 
-        let command = parse_input(&input);
-        if command[0].trim() == "exit" {
+        let input = parse_input(&input);
+        let command = match input.get(0) {
+            Some(cmd) => cmd.trim(),
+            None => continue,
+        };
+
+        if command == "exit" {
             break;
-        } else if command[0].trim() == "echo" {
-            println!("{}", command[1..].join(" "))
+        } else if command == "echo" {
+            println!("{}", input[1..].join(" "))
+        } else if command == "type" {
+            let arg = match input.get(1) {
+                Some(arg) => arg.trim(),
+                None => continue,
+            };
+
+            match arg {
+                "echo" => builtin_output(arg),
+                "exit" => builtin_output(arg),
+                "type" => builtin_output(arg),
+                other => println!("{other}: not found"),
+            }
         } else {
-            println!("{}: command not found", input.trim());
+            println!("{}: command not found", command);
         }
     }
 }
