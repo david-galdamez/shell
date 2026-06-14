@@ -1,5 +1,6 @@
 use std::{env, fs, path::Path};
 
+use is_executable::is_executable;
 use walkdir::WalkDir;
 
 #[derive(Debug)]
@@ -44,8 +45,12 @@ pub fn type_executable(arg: &str) {
     for path in env::split_paths(&path_str) {
         if Path::exists(&path) {
             for entry in WalkDir::new(&path).into_iter().filter_map(|e| e.ok()) {
+                if !is_executable(entry.path()) {
+                    continue;
+                }
+
                 if arg == entry.file_name().to_str().unwrap() {
-                    println!("{} is {}", arg, entry.into_path().to_str().unwrap());
+                    println!("{} is {}", arg, entry.path().display());
                     return;
                 }
             }
