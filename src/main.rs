@@ -1,6 +1,8 @@
 #[allow(unused_imports)]
 use std::io::{self, Write};
 
+use crate::utils::type_executable;
+
 mod utils;
 
 fn run() {
@@ -33,7 +35,7 @@ fn run() {
                 "echo" => utils::builtin_output(arg),
                 "exit" => utils::builtin_output(arg),
                 "type" => utils::builtin_output(arg),
-                other => println!("{other}: not found"),
+                other => utils::type_executable(other),
             }
         } else {
             println!("{}: command not found", cmd);
