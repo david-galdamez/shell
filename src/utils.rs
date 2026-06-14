@@ -1,4 +1,8 @@
-use std::{env, path::Path, process::Command};
+use std::{
+    env,
+    path::Path,
+    process::{Command, Stdio},
+};
 
 use is_executable::is_executable;
 use walkdir::WalkDir;
@@ -81,9 +85,8 @@ pub fn execute_file(cmd: &str, args: Vec<&str>) {
                     for arg in &args {
                         status.arg(arg);
                     }
-                    let status = status.status().expect("Failed to execute command");
+                    status.status().expect("Failed to execute command");
 
-                    println!("{}", status);
                     return;
                 }
             }
