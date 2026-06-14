@@ -76,8 +76,8 @@ pub fn execute_file(cmd: &str, args: Vec<&str>) {
                     continue;
                 }
 
-                if cmd == entry.file_name().to_str().unwrap() {
-                    let mut status = Command::new(entry.path());
+                if cmd == entry.file_name().to_str().expect("Expected valid file") {
+                    let mut status = Command::new(entry.file_name());
                     for arg in &args {
                         status.arg(arg);
                     }
