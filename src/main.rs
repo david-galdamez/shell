@@ -32,6 +32,14 @@ fn run() {
                 commands::type_output(arg);
             }
             "pwd" => commands::pwd(),
+            "cd" => {
+                let arg = match args.get(0) {
+                    Some(arg) => *arg,
+                    None => continue,
+                };
+
+                commands::cd(arg);
+            }
             _ => commands::execute_file(cmd, args),
         }
     }

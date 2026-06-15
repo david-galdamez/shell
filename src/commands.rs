@@ -1,6 +1,6 @@
 use std::{
     env,
-    path::{self, Path},
+    path::{self, Path, PathBuf},
     process::Command,
 };
 
@@ -77,10 +77,30 @@ pub fn execute_file(cmd: &str, args: Vec<&str>) {
 }
 
 pub fn pwd() {
-    let path = Path::new(".");
-    let abs = match path::absolute(path) {
-        Ok(path) => path,
-        Err(_) => panic!("Error getting current path"),
+    let current_dir = match env::current_dir().ok() {
+        Some(dir) => dir,
+        None => PathBuf::new(),
     };
-    println!("{}", abs.display());
+    println!("{}", current_dir.display());
+}
+
+pub fn cd(arg: &str) {
+    if arg.starts_with("/") {
+        cd_absolute(arg);
+        return;
+    }
+}
+
+fn cd_absolute(arg: &str) {
+    let path = Path::new(arg);
+
+    if !path.exists() {
+        println!("cd: {}: No such file or directory", arg);
+        return;
+    }
+
+    match env::set_current_dir(path) {
+        Ok(_) => return,
+        Err(e) => println!("{}", e),
+    }
 }
