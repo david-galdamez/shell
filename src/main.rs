@@ -1,6 +1,7 @@
 #[allow(unused_imports)]
 use std::io::{self, Write};
 
+mod commands;
 mod utils;
 
 fn run() {
@@ -20,23 +21,18 @@ fn run() {
         let cmd = input.cmd;
         let args = input.args;
 
-        if cmd == "exit" {
-            break;
-        } else if cmd == "echo" {
-            println!("{}", args.join(" "))
-        } else if cmd == "type" {
-            let arg = match args.get(0) {
-                Some(arg) => *arg,
-                None => continue,
-            };
-            match arg {
-                "echo" => utils::builtin_output(arg),
-                "exit" => utils::builtin_output(arg),
-                "type" => utils::builtin_output(arg),
-                other => utils::type_executable(other),
+        match cmd {
+            "exit" => break,
+            "echo" => println!("{}", args.join(" ")),
+            "type" => {
+                let arg = match args.get(0) {
+                    Some(arg) => *arg,
+                    None => continue,
+                };
+                commands::type_output(arg);
             }
-        } else {
-            utils::execute_file(cmd, args);
+            "pwd" => commands::pwd(),
+            _ => commands::execute_file(cmd, args),
         }
     }
 }
