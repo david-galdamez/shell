@@ -11,18 +11,17 @@ impl<'a> Input<'a> {
 }
 
 pub fn parse_input(input: &str) -> Option<Input<'_>> {
-    let input: Vec<&str> = input.splitn(1, " ").collect();
+    let input: Vec<&str> = input.splitn(2, " ").collect();
     if input.len() == 0 {
         return None;
     }
-
-    println!("{input:?}");
 
     if input.len() == 1 {
         return Some(Input::new(input[0], Vec::new()));
     }
 
-    let args = tokenize_args(input[2]);
+    let args = tokenize_args(input[1]);
+    println!("{args:?}");
 
     Some(Input::new(input[0], args))
 }
@@ -35,15 +34,19 @@ fn tokenize_args(input: &str) -> Vec<String> {
     for c in input.chars() {
         if c == '\'' {
             quote_counter += 1;
+            continue;
         }
 
         if c == '\'' && quote_counter != 0 {
             quote_counter -= 1;
+            continue;
         }
 
         if c == ' ' && quote_counter == 0 {
-            args.push(arg.to_string());
-            arg.clear();
+            if !arg.is_empty() {
+                args.push(arg.to_string());
+                arg.clear();
+            }
         }
 
         arg.push(c);

@@ -7,6 +7,8 @@ use std::{
 use is_executable::is_executable;
 use walkdir::WalkDir;
 
+pub fn echo(args: Vec<String>) {}
+
 pub fn type_output(arg: &str) {
     match arg {
         "echo" => println!("{arg} is a shell builtin"),
