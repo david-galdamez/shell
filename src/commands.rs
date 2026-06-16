@@ -89,6 +89,8 @@ pub fn cd(arg: &str) {
         cd_absolute(arg);
         return;
     }
+
+    cd_relative(arg);
 }
 
 fn cd_absolute(arg: &str) {
@@ -101,6 +103,34 @@ fn cd_absolute(arg: &str) {
 
     match env::set_current_dir(path) {
         Ok(_) => return,
-        Err(e) => println!("{}", e),
+        Err(e) => println!("{e}"),
     }
+}
+
+fn cd_relative(arg: &str) {
+    let mut current_path = match env::current_dir().ok() {
+        Some(path) => path,
+        None => PathBuf::new(),
+    };
+    for dir in arg.split("/") {
+        if dir == "." {
+            continue;
+        }
+
+        if dir == ".." {
+            current_path.pop();
+        } else {
+            current_path.push(dir);
+            if !current_path.exists() {
+                current_path.pop();
+                println!("cd: {}: No such file or directory", dir);
+                return;
+            }
+        }
+    }
+
+    match env::set_current_dir(current_path) {
+        Ok(_) => return,
+        Err(e) => println!("{e}"),
+    };
 }
