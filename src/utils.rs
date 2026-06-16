@@ -28,27 +28,38 @@ pub fn parse_input(input: &str) -> Option<Input<'_>> {
 fn tokenize_args(input: &str) -> Vec<String> {
     let mut args: Vec<String> = Vec::new();
     let mut arg = String::new();
-    let mut quote_counter = 0;
+    let mut single_quote_counter = 0;
+    let mut double_quote_counter = 0;
 
     for c in input.chars() {
-        if c == '\'' && quote_counter == 0 {
-            quote_counter += 1;
+
+        if c == '"' && double_quote_counter == 0 {
+            double_quote_counter += 1;
             continue;
         }
 
-        if c == '\'' && quote_counter != 0 {
-            quote_counter -= 1;
+        if c == '"' && double_quote_counter != 0 {
+            double_quote_counter -= 1;
             continue;
         }
 
-        if c == ' ' && quote_counter == 0 {
+        if c == '\'' && single_quote_counter == 0 && double_quote_counter == 0 {
+            single_quote_counter += 1;
+            continue;
+        }
+
+        if c == '\'' && single_quote_counter != 0 && double_quote_counter == 0 {
+            single_quote_counter -= 1;
+            continue;
+        }
+
+        if c == ' ' && single_quote_counter == 0  && double_quote_counter == 0 {
             if !arg.is_empty() {
                 args.push(arg.to_string());
                 arg.clear();
             }
             continue;
         }
-
         arg.push(c);
     }
 
