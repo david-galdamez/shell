@@ -14,7 +14,7 @@ fn run() {
             .read_line(&mut input)
             .expect("Couldn't read line");
 
-        let input = match utils::parse_input(&input) {
+        let input = match utils::parse_input(&input.trim()) {
             Some(input) => input,
             None => continue,
         };
@@ -23,10 +23,10 @@ fn run() {
 
         match cmd {
             "exit" => break,
-            "echo" => println!("{}", args.join(" ")),
+            "echo" => println!("{args:?}"),
             "type" => {
                 let arg = match args.get(0) {
-                    Some(arg) => *arg,
+                    Some(arg) => arg,
                     None => continue,
                 };
                 commands::type_output(arg);
@@ -34,7 +34,7 @@ fn run() {
             "pwd" => commands::pwd(),
             "cd" => {
                 let arg = match args.get(0) {
-                    Some(arg) => *arg,
+                    Some(arg) => arg,
                     None => continue,
                 };
 
