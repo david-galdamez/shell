@@ -53,7 +53,7 @@ fn type_executable(arg: &str) {
     println!("{}: not found", arg);
 }
 
-pub fn execute_file(cmd: &str, args: Vec<String>) {
+pub fn execute_file(cmd: String, args: Vec<String>) {
     let path_str = match env::var("PATH").ok() {
         Some(path) => path,
         None => {

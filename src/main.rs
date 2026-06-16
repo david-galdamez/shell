@@ -21,7 +21,7 @@ fn run() {
         let cmd = input.cmd;
         let args = input.args;
 
-        match cmd {
+        match cmd.as_str() {
             "exit" => break,
             "echo" => commands::echo(args),
             "type" => {
