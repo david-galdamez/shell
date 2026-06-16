@@ -30,8 +30,20 @@ fn tokenize_args(input: &str) -> Vec<String> {
     let mut arg = String::new();
     let mut single_quote_counter = 0;
     let mut double_quote_counter = 0;
+    let mut backlash = false;
 
     for c in input.chars() {
+
+        if c == '\\' && !backlash  {
+            backlash = true;
+            continue;
+        }
+
+        if backlash {
+            arg.push(c);
+            backlash = false;
+            continue
+        }
 
         if c == '"' && double_quote_counter == 0 {
             double_quote_counter += 1;
