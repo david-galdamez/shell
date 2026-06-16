@@ -13,7 +13,7 @@ pub fn echo(args: Vec<String>) {
         .filter(|a| *a != " ")
         .map(|a| format!("{}", a))
         .collect();
-    println!("{}", args.join(" "))
+    println!("{}", args.join(" "));
 }
 
 pub fn type_output(arg: &str) {

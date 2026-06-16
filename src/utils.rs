@@ -31,7 +31,7 @@ fn tokenize_args(input: &str) -> Vec<String> {
     let mut quote_counter = 0;
 
     for c in input.chars() {
-        if c == '\'' {
+        if c == '\'' && quote_counter == 0 {
             quote_counter += 1;
             continue;
         }
