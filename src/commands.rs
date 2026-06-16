@@ -1,6 +1,6 @@
 use std::{
     env,
-    path::{self, Path, PathBuf},
+    path::{Path, PathBuf},
     process::Command,
 };
 
@@ -90,6 +90,11 @@ pub fn cd(arg: &str) {
         return;
     }
 
+    if arg.starts_with("~") {
+        cd_home_dir(arg);
+        return;
+    }
+
     cd_relative(arg);
 }
 
@@ -113,7 +118,7 @@ fn cd_relative(arg: &str) {
         None => PathBuf::new(),
     };
     for dir in arg.split("/") {
-        if dir == "." {
+        if dir == "." || dir == "~" {
             continue;
         }
 
@@ -133,4 +138,16 @@ fn cd_relative(arg: &str) {
         Ok(_) => return,
         Err(e) => println!("{e}"),
     };
+}
+
+fn cd_home_dir(arg: &str) {
+    let home = match std::env::home_dir() {
+        Some(home) => home,
+        None => PathBuf::new(),
+    };
+
+    match env::set_current_dir(home) {
+        Ok(_) => cd_relative(arg),
+        Err(e) => println!("{e}"),
+    }
 }
