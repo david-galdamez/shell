@@ -11,20 +11,17 @@ impl Input {
 }
 
 pub fn parse_input(input: &str) -> Option<Input> {
-    let input: Vec<&str> = input.splitn(2, " ").collect();
+    let input = tokenize_args(input);
     if input.len() == 0 {
         return None;
     }
 
-    let cmd = input[0].trim().replace('"', "");
 
     if input.len() == 1 {
-        return Some(Input::new(cmd, Vec::new()));
+        return Some(Input::new(input[0].clone(), Vec::new()));
     }
 
-    let args = tokenize_args(input[1]);
-
-    Some(Input::new(cmd, args))
+    Some(Input::new(input[0].clone(), input[1..].to_vec()))
 }
 
 fn tokenize_args(input: &str) -> Vec<String> {
