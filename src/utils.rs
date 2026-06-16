@@ -2,26 +2,58 @@
 pub struct Input {
     pub cmd: String,
     pub args: Vec<String>,
+    pub operator: String,
+    pub operator_args: Vec<String>
 }
 
 impl Input {
-    fn new(cmd: String, args: Vec<String>) -> Self {
-        Input { cmd, args }
+    fn new() -> Self {
+        Input { cmd: String::new(), args: vec![], operator: String::new(), operator_args: vec![] }
+    }
+
+    fn input(input: Vec<String>) -> Option<Input> {
+        if input.len() == 0 {
+            return None;
+        }
+
+        let mut parsed_input = Input::new();
+
+        if input.len() == 1 {
+            parsed_input.cmd = input[0].clone();
+            return Some(
+                parsed_input
+            )
+        }
+
+        for (i, arg) in input.iter().enumerate() {
+            if i == 0 {
+                parsed_input.cmd = arg.clone();
+                continue;
+            }
+
+            if arg == ">" || arg == "1>" {
+                parsed_input.operator = arg.clone();
+                continue;
+            }
+
+            if parsed_input.operator.is_empty() {
+                parsed_input.args.push(arg.clone());
+            } else {
+                parsed_input.operator_args.push(arg.clone()); 
+            }
+        }
+
+        Some(
+            parsed_input
+        )
     }
 }
 
 pub fn parse_input(input: &str) -> Option<Input> {
-    let input = tokenize_args(input);
-    if input.len() == 0 {
-        return None;
-    }
+    let tokenized_input = tokenize_args(input);
+    let input = Input::input(tokenized_input);
 
-
-    if input.len() == 1 {
-        return Some(Input::new(input[0].clone(), Vec::new()));
-    }
-
-    Some(Input::new(input[0].clone(), input[1..].to_vec()))
+    input
 }
 
 fn tokenize_args(input: &str) -> Vec<String> {
@@ -77,4 +109,22 @@ fn tokenize_args(input: &str) -> Vec<String> {
     args.push(arg);
 
     args
+}
+
+fn redirect_stdout(stdout: String, operator: String, operator_args: Vec<String>) {
+    if operator.is_empty() {
+        println!("{stdout}")
+    }
+
+    if operator == ">" || operator == "1>"     {
+        let file_name = match operator_args.get(0) {
+            Some(name) => name,
+            None => {
+                println!("Error parsing");
+                return;
+            }
+        };
+
+
+    }
 }

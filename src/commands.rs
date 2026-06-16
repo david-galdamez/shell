@@ -7,7 +7,7 @@ use std::{
 use is_executable::is_executable;
 use walkdir::WalkDir;
 
-pub fn echo(args: Vec<String>) {
+pub fn echo(args: Vec<String>, operator: String, operator_args: Vec<String>) {
     let args: Vec<String> = args
         .iter()
         .filter(|a| *a != " ")

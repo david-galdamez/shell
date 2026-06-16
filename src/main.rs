@@ -20,6 +20,8 @@ fn run() {
         };
         let cmd = input.cmd;
         let args = input.args;
+        let operator = input.operator;
+        let operator_args = input.operator_args;
 
         match cmd.as_str() {
             "exit" => break,
