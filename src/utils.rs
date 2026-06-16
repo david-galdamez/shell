@@ -45,12 +45,12 @@ fn tokenize_args(input: &str) -> Vec<String> {
             continue
         }
 
-        if c == '"' && double_quote_counter == 0 {
+        if c == '"' && double_quote_counter == 0 && single_quote_counter == 0 {
             double_quote_counter += 1;
             continue;
         }
 
-        if c == '"' && double_quote_counter != 0 {
+        if c == '"' && double_quote_counter != 0 && single_quote_counter == 0 {
             double_quote_counter -= 1;
             continue;
         }
