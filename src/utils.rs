@@ -34,7 +34,7 @@ fn tokenize_args(input: &str) -> Vec<String> {
 
     for c in input.chars() {
 
-        if c == '\\' && !backlash  {
+        if c == '\\' && !backlash && single_quote_counter == 0  {
             backlash = true;
             continue;
         }
