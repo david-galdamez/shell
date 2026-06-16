@@ -7,7 +7,14 @@ use std::{
 use is_executable::is_executable;
 use walkdir::WalkDir;
 
-pub fn echo(args: Vec<String>) {}
+pub fn echo(args: Vec<String>) {
+    let args: Vec<String> = args
+        .iter()
+        .filter(|a| *a != " ")
+        .map(|a| format!("{}", a))
+        .collect();
+    println!("{}", args.join(" "))
+}
 
 pub fn type_output(arg: &str) {
     match arg {

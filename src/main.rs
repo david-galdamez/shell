@@ -23,7 +23,7 @@ fn run() {
 
         match cmd {
             "exit" => break,
-            "echo" => println!("{args:?}"),
+            "echo" => commands::echo(args),
             "type" => {
                 let arg = match args.get(0) {
                     Some(arg) => arg,

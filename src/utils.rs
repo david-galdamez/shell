@@ -21,7 +21,6 @@ pub fn parse_input(input: &str) -> Option<Input<'_>> {
     }
 
     let args = tokenize_args(input[1]);
-    println!("{args:?}");
 
     Some(Input::new(input[0], args))
 }
@@ -47,6 +46,7 @@ fn tokenize_args(input: &str) -> Vec<String> {
                 args.push(arg.to_string());
                 arg.clear();
             }
+            continue;
         }
 
         arg.push(c);
