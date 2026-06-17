@@ -25,15 +25,15 @@ fn run() {
 
         match cmd.as_str() {
             "exit" => break,
-            "echo" => commands::echo(args),
+            "echo" => commands::echo(args, operator, operator_args),
             "type" => {
                 let arg = match args.get(0) {
                     Some(arg) => arg,
                     None => continue,
                 };
-                commands::type_output(arg);
+                commands::type_output(arg, operator, operator_args);
             }
-            "pwd" => commands::pwd(),
+            "pwd" => commands::pwd(operator, operator_args),
             "cd" => {
                 let arg = match args.get(0) {
                     Some(arg) => arg,
@@ -42,7 +42,7 @@ fn run() {
 
                 commands::cd(arg);
             }
-            _ => commands::execute_file(cmd, args),
+            _ => commands::execute_file(cmd, args, operator, operator_args),
         }
     }
 }

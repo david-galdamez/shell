@@ -7,30 +7,41 @@ use std::{
 use is_executable::is_executable;
 use walkdir::WalkDir;
 
+use crate::utils::redirect_stdout;
+
 pub fn echo(args: Vec<String>, operator: String, operator_args: Vec<String>) {
     let args: Vec<String> = args
         .iter()
         .filter(|a| *a != " ")
         .map(|a| format!("{}", a))
         .collect();
-    println!("{}", args.join(" "));
+
+    redirect_stdout(args.join(" "), operator, operator_args);
 }
 
-pub fn type_output(arg: &str) {
+pub fn type_output(arg: &str, operator: String, operator_args: Vec<String>) {
     match arg {
-        "echo" => println!("{arg} is a shell builtin"),
-        "exit" => println!("{arg} is a shell builtin"),
-        "type" => println!("{arg} is a shell builtin"),
-        "pwd" => println!("{arg} is a shell builtin"),
-        other => type_executable(other),
+        "echo" => {
+            redirect_stdout(format!("{arg} is a shell builtin"), operator, operator_args);
+        }
+        "exit" => {
+            redirect_stdout(format!("{arg} is a shell builtin"), operator, operator_args);
+        }
+        "type" => {
+            redirect_stdout(format!("{arg} is a shell builtin"), operator, operator_args);
+        }
+        "pwd" => {
+            redirect_stdout(format!("{arg} is a shell builtin"), operator, operator_args);
+        }
+        other => type_executable(other, operator, operator_args),
     }
 }
 
-fn type_executable(arg: &str) {
+fn type_executable(arg: &str, operator: String, operator_args: Vec<String>) {
     let path_str = match env::var("PATH").ok() {
         Some(path) => path,
         None => {
-            println!("PATH variable not found in env");
+            eprintln!("PATH variable not found in env");
             return;
         }
     };
@@ -43,21 +54,22 @@ fn type_executable(arg: &str) {
                 }
 
                 if arg == entry.file_name().to_str().unwrap() {
-                    println!("{} is {}", arg, entry.path().display());
+                    let out = format!("{} is {}", arg, entry.path().display());
+                    redirect_stdout(out, operator, operator_args);
                     return;
                 }
             }
         }
     }
 
-    println!("{}: not found", arg);
+    eprintln!("{}: not found", arg);
 }
 
-pub fn execute_file(cmd: String, args: Vec<String>) {
+pub fn execute_file(cmd: String, args: Vec<String>, operator: String, operator_args: Vec<String>) {
     let path_str = match env::var("PATH").ok() {
         Some(path) => path,
         None => {
-            println!("PATH variable not found in env");
+            eprintln!("PATH variable not found in env");
             return;
         }
     };
@@ -70,27 +82,38 @@ pub fn execute_file(cmd: String, args: Vec<String>) {
                 }
 
                 if cmd == entry.file_name().to_str().expect("Expected valid file") {
-                    let mut status = Command::new(entry.file_name());
-                    for arg in &args {
-                        status.arg(arg);
+                    if operator.is_empty() {
+                        Command::new(entry.file_name())
+                            .args(&args)
+                            .status()
+                            .expect("Failed to execute command");
+                    } else {
+                        let output = Command::new(entry.file_name())
+                            .args(&args)
+                            .output()
+                            .expect("Failed to execute command");
+                        let output = String::from_utf8_lossy(&output.stdout);
+                        redirect_stdout(output.to_string(), operator, operator_args);
                     }
-                    status.status().expect("Failed to execute command");
-
                     return;
                 }
             }
         }
     }
 
-    println!("{}: not found", cmd);
+    eprintln!("{}: not found", cmd);
 }
 
-pub fn pwd() {
+pub fn pwd(operator: String, operator_args: Vec<String>) {
     let current_dir = match env::current_dir().ok() {
         Some(dir) => dir,
         None => PathBuf::new(),
     };
-    println!("{}", current_dir.display());
+    redirect_stdout(
+        format!("{}", current_dir.display()),
+        operator,
+        operator_args,
+    );
 }
 
 pub fn cd(arg: &str) {
@@ -111,13 +134,13 @@ fn cd_absolute(arg: &str) {
     let path = Path::new(arg);
 
     if !path.exists() {
-        println!("cd: {}: No such file or directory", arg);
+        eprintln!("cd: {}: No such file or directory", arg);
         return;
     }
 
     match env::set_current_dir(path) {
         Ok(_) => return,
-        Err(e) => println!("{e}"),
+        Err(e) => eprintln!("{e}"),
     }
 }
 
@@ -137,7 +160,7 @@ fn cd_relative(arg: &str) {
             current_path.push(dir);
             if !current_path.exists() {
                 current_path.pop();
-                println!("cd: {}: No such file or directory", dir);
+                eprintln!("cd: {}: No such file or directory", dir);
                 return;
             }
         }
@@ -145,7 +168,7 @@ fn cd_relative(arg: &str) {
 
     match env::set_current_dir(current_path) {
         Ok(_) => return,
-        Err(e) => println!("{e}"),
+        Err(e) => eprintln!("{e}"),
     };
 }
 
@@ -157,6 +180,6 @@ fn cd_home_dir(arg: &str) {
 
     match env::set_current_dir(home) {
         Ok(_) => cd_relative(arg),
-        Err(e) => println!("{e}"),
+        Err(e) => eprintln!("{e}"),
     }
 }

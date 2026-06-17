@@ -1,14 +1,21 @@
+use std::{fs::File, io::Write, path::PathBuf};
+
 #[derive(Debug)]
 pub struct Input {
     pub cmd: String,
     pub args: Vec<String>,
     pub operator: String,
-    pub operator_args: Vec<String>
+    pub operator_args: Vec<String>,
 }
 
 impl Input {
     fn new() -> Self {
-        Input { cmd: String::new(), args: vec![], operator: String::new(), operator_args: vec![] }
+        Input {
+            cmd: String::new(),
+            args: vec![],
+            operator: String::new(),
+            operator_args: vec![],
+        }
     }
 
     fn input(input: Vec<String>) -> Option<Input> {
@@ -20,9 +27,7 @@ impl Input {
 
         if input.len() == 1 {
             parsed_input.cmd = input[0].clone();
-            return Some(
-                parsed_input
-            )
+            return Some(parsed_input);
         }
 
         for (i, arg) in input.iter().enumerate() {
@@ -39,13 +44,11 @@ impl Input {
             if parsed_input.operator.is_empty() {
                 parsed_input.args.push(arg.clone());
             } else {
-                parsed_input.operator_args.push(arg.clone()); 
+                parsed_input.operator_args.push(arg.clone());
             }
         }
 
-        Some(
-            parsed_input
-        )
+        Some(parsed_input)
     }
 }
 
@@ -64,8 +67,7 @@ fn tokenize_args(input: &str) -> Vec<String> {
     let mut backlash = false;
 
     for c in input.chars() {
-
-        if c == '\\' && !backlash && single_quote_counter == 0  {
+        if c == '\\' && !backlash && single_quote_counter == 0 {
             backlash = true;
             continue;
         }
@@ -73,7 +75,7 @@ fn tokenize_args(input: &str) -> Vec<String> {
         if backlash {
             arg.push(c);
             backlash = false;
-            continue
+            continue;
         }
 
         if c == '"' && double_quote_counter == 0 && single_quote_counter == 0 {
@@ -96,7 +98,7 @@ fn tokenize_args(input: &str) -> Vec<String> {
             continue;
         }
 
-        if c == ' ' && single_quote_counter == 0  && double_quote_counter == 0 {
+        if c == ' ' && single_quote_counter == 0 && double_quote_counter == 0 {
             if !arg.is_empty() {
                 args.push(arg.to_string());
                 arg.clear();
@@ -111,20 +113,37 @@ fn tokenize_args(input: &str) -> Vec<String> {
     args
 }
 
-fn redirect_stdout(stdout: String, operator: String, operator_args: Vec<String>) {
+pub fn redirect_stdout(stdout: String, operator: String, operator_args: Vec<String>) {
     if operator.is_empty() {
         println!("{stdout}")
     }
 
-    if operator == ">" || operator == "1>"     {
-        let file_name = match operator_args.get(0) {
+    if operator == ">" || operator == "1>" {
+        let file_path = match operator_args.get(0) {
             Some(name) => name,
             None => {
-                println!("Error parsing");
+                eprintln!("Error parsing");
                 return;
             }
         };
 
+        let mut path = PathBuf::new();
+        path.push(file_path);
 
+        let mut file = match File::create(path) {
+            Ok(file) => file,
+            Err(e) => {
+                eprintln!("{e}");
+                return;
+            }
+        };
+
+        match file.write(stdout.as_bytes()) {
+            Ok(_) => (),
+            Err(e) => {
+                eprintln!("{e}");
+                return;
+            }
+        };
     }
 }
