@@ -115,7 +115,8 @@ fn tokenize_args(input: &str) -> Vec<String> {
 
 pub fn redirect_stdout(stdout: String, operator: String, operator_args: Vec<String>) {
     if operator.is_empty() {
-        println!("{stdout}")
+        println!("{stdout}");
+        return;
     }
 
     if operator == ">" || operator == "1>" {
