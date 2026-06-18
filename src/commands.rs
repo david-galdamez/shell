@@ -98,7 +98,7 @@ pub fn execute_file(cmd: String, args: Vec<String>, operator: String, operator_a
                             redirect_stdout(output.trim().to_string(), operator, operator_args);
                         } else {
                             let erroutput = String::from_utf8_lossy(&output.stderr);
-                            eprintln!("{}", erroutput);
+                            eprintln!("{}", erroutput.trim());
                         }
                     }
                     return;
