@@ -114,8 +114,9 @@ fn tokenize_args(input: &str) -> Vec<String> {
 }
 
 pub fn redirect_stdout(stdout: String, operator: String, operator_args: Vec<String>) {
+    let mut output = stdout;
     if operator.is_empty() {
-        println!("{stdout}");
+        println!("{output}");
         return;
     }
 
@@ -139,7 +140,9 @@ pub fn redirect_stdout(stdout: String, operator: String, operator_args: Vec<Stri
             }
         };
 
-        match file.write(stdout.as_bytes()) {
+        output.push('\n');
+
+        match file.write(output.as_bytes()) {
             Ok(_) => (),
             Err(e) => {
                 eprintln!("{e}");
