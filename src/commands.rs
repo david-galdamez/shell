@@ -92,8 +92,14 @@ pub fn execute_file(cmd: String, args: Vec<String>, operator: String, operator_a
                             .args(&args)
                             .output()
                             .expect("Failed to execute command");
-                        let output = String::from_utf8_lossy(&output.stdout);
-                        redirect_stdout(output.trim().to_string(), operator, operator_args);
+
+                        if output.status.success() {
+                            let output = String::from_utf8_lossy(&output.stdout);
+                            redirect_stdout(output.trim().to_string(), operator, operator_args);
+                        } else {
+                            let erroutput = String::from_utf8_lossy(&output.stderr);
+                            eprintln!("{}", erroutput);
+                        }
                     }
                     return;
                 }
