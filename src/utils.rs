@@ -1,10 +1,12 @@
 use std::{fs::File, io::Write, path::PathBuf};
 
+use crate::redirect::Redirect;
+
 #[derive(Debug)]
 pub struct Input {
     pub cmd: String,
     pub args: Vec<String>,
-    pub operator: String,
+    pub operator: Option<String>,
     pub operator_args: Vec<String>,
 }
 
@@ -13,13 +15,13 @@ impl Input {
         Input {
             cmd: String::new(),
             args: vec![],
-            operator: String::new(),
+            operator: None,
             operator_args: vec![],
         }
     }
 
-    fn input(input: Vec<String>) -> Option<Input> {
-        if input.len() == 0 {
+    fn parse(input: Vec<String>) -> Option<Input> {
+        if input.is_empty() {
             return None;
         }
 
@@ -37,14 +39,13 @@ impl Input {
             }
 
             if arg == ">" || arg == "1>" {
-                parsed_input.operator = arg.clone();
+                parsed_input.operator = Some(arg.clone());
                 continue;
             }
 
-            if parsed_input.operator.is_empty() {
-                parsed_input.args.push(arg.clone());
-            } else {
-                parsed_input.operator_args.push(arg.clone());
+            match parsed_input.operator {
+                Some(_) => parsed_input.operator_args.push(arg.clone()),
+                None => parsed_input.args.push(arg.clone()),
             }
         }
 
@@ -54,20 +55,18 @@ impl Input {
 
 pub fn parse_input(input: &str) -> Option<Input> {
     let tokenized_input = tokenize_args(input);
-    let input = Input::input(tokenized_input);
-
-    input
+    Input::parse(tokenized_input)
 }
 
 fn tokenize_args(input: &str) -> Vec<String> {
     let mut args: Vec<String> = Vec::new();
     let mut arg = String::new();
-    let mut single_quote_counter = 0;
-    let mut double_quote_counter = 0;
+    let mut single_quote = false;
+    let mut double_quote = false;
     let mut backlash = false;
 
     for c in input.chars() {
-        if c == '\\' && !backlash && single_quote_counter == 0 {
+        if c == '\\' && !backlash && !single_quote {
             backlash = true;
             continue;
         }
@@ -78,27 +77,27 @@ fn tokenize_args(input: &str) -> Vec<String> {
             continue;
         }
 
-        if c == '"' && double_quote_counter == 0 && single_quote_counter == 0 {
-            double_quote_counter += 1;
+        if c == '"' && !double_quote && !single_quote {
+            double_quote = true;
             continue;
         }
 
-        if c == '"' && double_quote_counter != 0 && single_quote_counter == 0 {
-            double_quote_counter -= 1;
+        if c == '"' && double_quote && !single_quote {
+            double_quote = false;
             continue;
         }
 
-        if c == '\'' && single_quote_counter == 0 && double_quote_counter == 0 {
-            single_quote_counter += 1;
+        if c == '\'' && !single_quote && !double_quote {
+            single_quote = true;
             continue;
         }
 
-        if c == '\'' && single_quote_counter != 0 && double_quote_counter == 0 {
-            single_quote_counter -= 1;
+        if c == '\'' && single_quote && !double_quote {
+            single_quote = false;
             continue;
         }
 
-        if c == ' ' && single_quote_counter == 0 && double_quote_counter == 0 {
+        if c == ' ' && !single_quote && !double_quote {
             if !arg.is_empty() {
                 args.push(arg.to_string());
                 arg.clear();
@@ -108,46 +107,60 @@ fn tokenize_args(input: &str) -> Vec<String> {
         arg.push(c);
     }
 
-    args.push(arg);
+    if !arg.is_empty() {
+        args.push(arg);
+    }
 
     args
 }
 
-pub fn redirect_stdout(stdout: String, operator: String, operator_args: Vec<String>) {
-    let mut output = stdout;
-    if operator.is_empty() {
-        println!("{output}");
-        return;
+pub fn handle_stdout(redirect: Redirect, operator: Option<String>, operator_args: Vec<String>) {
+    let mut output = redirect.stdout.unwrap_or_default();
+    let mut err = redirect.stderr.unwrap_or_default();
+
+    if let Some(op) = operator {
+        if op == ">" || op == "1>" {
+            output.push('\n');
+            eprintln!("{}", err);
+            write_to_file(&output, operator_args);
+        } else if op == "2>" {
+            err.push('\n');
+            println!("{}", output);
+            write_to_file(&err, operator_args);
+        }
+    } else {
+        if err.is_empty() {
+            println!("{output}");
+        } else {
+            eprintln!("{err}");
+        }
     }
+}
 
-    if operator == ">" || operator == "1>" {
-        let file_path = match operator_args.get(0) {
-            Some(name) => name,
-            None => {
-                eprintln!("Error parsing");
-                return;
-            }
-        };
+fn write_to_file(output: &str, operator_args: Vec<String>) {
+    let file_path = match operator_args.first() {
+        Some(name) => name,
+        None => {
+            eprintln!("File not provided");
+            return;
+        }
+    };
 
-        let mut path = PathBuf::new();
-        path.push(file_path);
+    let mut path = PathBuf::new();
+    path.push(file_path);
 
-        let mut file = match File::create(path) {
-            Ok(file) => file,
-            Err(e) => {
-                eprintln!("{e}");
-                return;
-            }
-        };
+    let mut file = match File::create(path) {
+        Ok(file) => file,
+        Err(e) => {
+            eprintln!("{e}");
+            return;
+        }
+    };
 
-        output.push('\n');
-
-        match file.write(output.as_bytes()) {
-            Ok(_) => (),
-            Err(e) => {
-                eprintln!("{e}");
-                return;
-            }
-        };
-    }
+    match file.write_all(output.as_bytes()) {
+        Ok(_) => (),
+        Err(e) => {
+            eprintln!("{e}");
+        }
+    };
 }
