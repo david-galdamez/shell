@@ -19,7 +19,7 @@ pub fn echo(args: Vec<String>, operator: Option<String>, operator_args: Vec<Stri
         .collect();
 
     let mut output = Redirect::new();
-    output.stdout = Some(format!("{}\n", args.join(" ")));
+    output.stdout = Some(format!("{}", args.join(" ")));
 
     handle_stdout(output, operator, operator_args);
 }
@@ -36,7 +36,7 @@ pub fn type_output(
         None => "",
     };
     if arg.is_empty() {
-        output.stderr = Some(String::from("You have to pass an argument\n"));
+        output.stderr = Some(String::from("You have to pass an argument"));
     }
 
     if BUILTINS.contains(&arg) {
@@ -76,7 +76,7 @@ pub fn executables(
                                 .expect("Expected valid file name")
                     {
                         let mut output = Redirect::new();
-                        output.stdout = Some(format!("{} is {}\n", arg, entry.path().display()));
+                        output.stdout = Some(format!("{} is {}", arg, entry.path().display()));
                         handle_stdout(output, operator, operator_args);
                         return;
                     }
@@ -116,9 +116,9 @@ pub fn executables(
     let mut output = Redirect::new();
 
     if cmd == "type" {
-        output.stderr = Some(format!("{}: not found\n", args[0]));
+        output.stderr = Some(format!("{}: not found", args[0]));
     } else {
-        output.stderr = Some(format!("{}: not found\n", cmd));
+        output.stderr = Some(format!("{}: not found", cmd));
     }
 
     handle_stdout(output, operator, operator_args);
@@ -130,7 +130,7 @@ pub fn pwd(operator: Option<String>, operator_args: Vec<String>) {
         None => PathBuf::new(),
     };
     let mut output = Redirect::new();
-    output.stdout = Some(format!("{}\n", current_dir.display()));
+    output.stdout = Some(format!("{}", current_dir.display()));
     handle_stdout(output, operator, operator_args);
 }
 
