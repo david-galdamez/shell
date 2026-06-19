@@ -43,6 +43,11 @@ impl Input {
                 continue;
             }
 
+            if arg == "2>" {
+                parsed_input.operator = Some(arg.clone());
+                continue;
+            }
+
             match parsed_input.operator {
                 Some(_) => parsed_input.operator_args.push(arg.clone()),
                 None => parsed_input.args.push(arg.clone()),
@@ -121,11 +126,15 @@ pub fn handle_stdout(redirect: Redirect, operator: Option<String>, operator_args
     if let Some(op) = operator {
         if op == ">" || op == "1>" {
             output.push('\n');
-            eprintln!("{}", err);
+            if !err.is_empty() {
+                eprintln!("{}", err);
+            }
             write_to_file(&output, operator_args);
         } else if op == "2>" {
             err.push('\n');
-            println!("{}", output);
+            if !output.is_empty() {
+                println!("{}", output);
+            }
             write_to_file(&err, operator_args);
         }
     } else {

@@ -116,7 +116,7 @@ pub fn executables(
     let mut output = Redirect::new();
 
     if cmd == "type" {
-        output.stdout = Some(format!("{}: not found", args[0]));
+        output.stderr = Some(format!("{}: not found", args[0]));
     } else {
         output.stderr = Some(format!("{}: not found", cmd));
     }
