@@ -120,18 +120,16 @@ fn tokenize_args(input: &str) -> Vec<String> {
 }
 
 pub fn handle_stdout(redirect: Redirect, operator: Option<String>, operator_args: Vec<String>) {
-    let mut output = redirect.stdout.unwrap_or_default();
-    let mut err = redirect.stderr.unwrap_or_default();
+    let output = redirect.stdout.unwrap_or_default();
+    let err = redirect.stderr.unwrap_or_default();
 
     if let Some(op) = operator {
         if op == ">" || op == "1>" {
-            output.push('\n');
             if !err.is_empty() {
                 eprintln!("{}", err);
             }
             write_to_file(&output, operator_args);
         } else if op == "2>" {
-            err.push('\n');
             if !output.is_empty() {
                 println!("{}", output);
             }
