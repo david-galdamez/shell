@@ -33,13 +33,14 @@ pub fn type_output(
     let mut output = Redirect::new();
     let arg = match args.first() {
         Some(arg) => arg,
-        None => "",
+        None => {
+            output.stderr = Some(format!("You have to pass an argument"));
+            ""
+        }
     };
-    if arg.is_empty() {
-        output.stderr = Some(String::from("You have to pass an argument"));
-    }
 
     if BUILTINS.contains(&arg) {
+        output.stdout = Some(format!("{} is a shell builtin", arg));
         handle_stdout(output, operator, operator_args);
     } else {
         executables(cmd, args, operator, operator_args);
@@ -93,12 +94,18 @@ pub fn executables(
                             .expect("Failed to execute process");
 
                         let mut output = Redirect::new();
-                        output.stdout =
-                            Some(String::from_utf8_lossy(&command_output.stdout).to_string());
+                        output.stdout = Some(
+                            String::from_utf8_lossy(&command_output.stdout)
+                                .trim()
+                                .to_string(),
+                        );
 
                         if !command_output.status.success() {
-                            output.stderr =
-                                Some(String::from_utf8_lossy(&command_output.stderr).to_string());
+                            output.stderr = Some(
+                                String::from_utf8_lossy(&command_output.stderr)
+                                    .trim()
+                                    .to_string(),
+                            );
                         }
                         handle_stdout(output, Some(op), operator_args);
                     } else {
