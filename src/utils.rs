@@ -48,6 +48,11 @@ impl Input {
                 continue;
             }
 
+            if arg == ">>" || arg == "1>>" {
+                parsed_input.operator = Some(arg.clone());
+                continue;
+            }
+
             match parsed_input.operator {
                 Some(_) => parsed_input.operator_args.push(arg.clone()),
                 None => parsed_input.args.push(arg.clone()),
@@ -140,6 +145,14 @@ pub fn handle_stdout(redirect: Redirect, operator: Option<String>, operator_args
                 err.push('\n');
             }
             write_to_file(&err, operator_args);
+        } else if op == ">>" || op == "1>>" {
+            if !err.is_empty() {
+                eprintln!("{}", err);
+            }
+            if !output.is_empty() {
+                output.push('\n');
+            }
+            write_to_file(&output, operator_args);
         }
     } else {
         if err.is_empty() {
@@ -148,6 +161,34 @@ pub fn handle_stdout(redirect: Redirect, operator: Option<String>, operator_args
             eprintln!("{err}");
         }
     }
+}
+
+fn append_to_file(output: &str, operator_args: Vec<String>) {
+    let file_path = match operator_args.first() {
+        Some(name) => name,
+        None => {
+            eprintln!("File not provided");
+            return;
+        }
+    };
+
+    let mut path = PathBuf::new();
+    path.push(file_path);
+
+    let mut file = match File::create(path) {
+        Ok(file) => file,
+        Err(e) => {
+            eprintln!("{e}");
+            return;
+        }
+    };
+
+    match file.write_all(output.as_bytes()) {
+        Ok(_) => (),
+        Err(e) => {
+            eprintln!("{e}");
+        }
+    };
 }
 
 fn write_to_file(output: &str, operator_args: Vec<String>) {
