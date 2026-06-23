@@ -22,7 +22,7 @@ pub fn echo(args: Vec<String>, output_target: Option<OutputTarget>) {
         .collect();
 
     let mut output = Redirect::new();
-    output.stdout = Some(format!("{}", args.join(" ")));
+    output.stdout = Some(args.join(" ").to_string());
 
     handle_stdout(output, output_target);
 }
@@ -32,7 +32,7 @@ pub fn type_output(cmd: String, args: Vec<String>, output_target: Option<OutputT
     let arg = match args.first() {
         Some(arg) => arg,
         None => {
-            output.stderr = Some(format!("You have to pass an argument"));
+            output.stderr = Some("You have to pass an argument".to_string());
             ""
         }
     };
@@ -80,7 +80,7 @@ pub fn executables(cmd: String, args: Vec<String>, output_target: Option<OutputT
                         .to_str()
                         .expect("Expected valid file name")
                 {
-                    if let Some(_) = output_target {
+                    if output_target.is_some() {
                         let command_output = Command::new(entry.file_name())
                             .args(&args)
                             .output()

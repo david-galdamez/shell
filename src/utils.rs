@@ -1,7 +1,7 @@
 use std::{
     fs::File,
     io::Write,
-    path::{Path, PathBuf},
+    path::Path,
 };
 
 use crate::redirect::{Action, OutputTarget, Redirect};
@@ -141,7 +141,7 @@ pub fn handle_stdout(redirect: Redirect, output_target: Option<OutputTarget>) {
             if !output.is_empty() {
                 output.push('\n');
             }
-            write_to_file(&output, &ot);
+            write_to_file(&output, ot);
         } else if ot.operator == "2>" || ot.operator == "2>>" {
             if !output.is_empty() {
                 println!("{}", output);
@@ -149,7 +149,7 @@ pub fn handle_stdout(redirect: Redirect, output_target: Option<OutputTarget>) {
             if !err.is_empty() {
                 err.push('\n');
             }
-            write_to_file(&err, &ot);
+            write_to_file(&err, ot);
         }
     } else {
         if err.is_empty() {
