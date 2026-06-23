@@ -1,4 +1,8 @@
-use std::{fs::File, io::Write, path::PathBuf};
+use std::{
+    fs::File,
+    io::Write,
+    path::{Path, PathBuf},
+};
 
 use crate::redirect::{Action, OutputTarget, Redirect};
 
@@ -174,15 +178,22 @@ fn write_to_file(output: &str, output_target: &OutputTarget) {
     let file_path = match output_target.args.first() {
         Some(name) => name,
         None => {
-            eprintln!("File not provided");
+            eprintln!("File name not provided");
             return;
         }
     };
 
-    let mut path = PathBuf::new();
-    path.push(file_path);
-
-    let mut file = match File::create(path) {
+    let path = Path::new(file_path);
+    let mut file = File::options();
+    match output_target.action {
+        Action::Append => {
+            file.append(true);
+        }
+        Action::Redirect => {
+            file.write(true);
+        }
+    }
+    let mut file = match file.create(true).open(path) {
         Ok(file) => file,
         Err(e) => {
             eprintln!("{e}");
@@ -190,17 +201,10 @@ fn write_to_file(output: &str, output_target: &OutputTarget) {
         }
     };
 
-    match output_target.action {
-        Action::Append => {
-            let mut append_fiel = File::create
+    match file.write_all(output.as_bytes()) {
+        Ok(_) => (),
+        Err(e) => {
+            eprintln!("{e}");
         }
-        Action::Redirect => {
-            match file.write_all(output.as_bytes()) {
-                Ok(_) => (),
-                Err(e) => {
-                    eprintln!("{e}");
-                }
-            };
-        }
-    }
+    };
 }
