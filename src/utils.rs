@@ -41,19 +41,13 @@ impl Input {
                 continue;
             }
 
-            if arg == ">" || arg == "1>" {
+            if arg == ">" || arg == "1>" || arg == "2>" {
                 output_target.operator = arg.clone();
                 output_target.action = Action::Redirect;
                 continue;
             }
 
-            if arg == "2>" {
-                output_target.operator = arg.clone();
-                output_target.action = Action::Redirect;
-                continue;
-            }
-
-            if arg == ">>" || arg == "1>>" {
+            if arg == ">>" || arg == "1>>" || arg == "2>>" {
                 output_target.operator = arg.clone();
                 output_target.action = Action::Append;
                 continue;
@@ -140,7 +134,7 @@ pub fn handle_stdout(redirect: Redirect, output_target: Option<OutputTarget>) {
     let mut err = redirect.stderr.unwrap_or_default();
 
     if let Some(ot) = &output_target {
-        if ot.operator == ">" || ot.operator == "1>" {
+        if ot.operator == ">" || ot.operator == "1>" || ot.operator == ">>" || ot.operator == "1>>" {
             if !err.is_empty() {
                 eprintln!("{}", err);
             }
@@ -148,7 +142,7 @@ pub fn handle_stdout(redirect: Redirect, output_target: Option<OutputTarget>) {
                 output.push('\n');
             }
             write_to_file(&output, &ot);
-        } else if ot.operator == "2>" {
+        } else if ot.operator == "2>" || ot.operator == "2>>" {
             if !output.is_empty() {
                 println!("{}", output);
             }
@@ -156,14 +150,6 @@ pub fn handle_stdout(redirect: Redirect, output_target: Option<OutputTarget>) {
                 err.push('\n');
             }
             write_to_file(&err, &ot);
-        } else if ot.operator == ">>" || ot.operator == "1>>" {
-            if !err.is_empty() {
-                eprintln!("{}", err);
-            }
-            if !output.is_empty() {
-                output.push('\n');
-            }
-            write_to_file(&output, &ot);
         }
     } else {
         if err.is_empty() {
