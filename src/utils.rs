@@ -1,13 +1,12 @@
 use std::{fs::File, io::Write, path::PathBuf};
 
-use crate::redirect::Redirect;
+use crate::redirect::{Action, OutputTarget, Redirect};
 
 #[derive(Debug)]
 pub struct Input {
     pub cmd: String,
     pub args: Vec<String>,
-    pub operator: Option<String>,
-    pub operator_args: Vec<String>,
+    pub output_target: Option<OutputTarget>,
 }
 
 impl Input {
@@ -15,8 +14,7 @@ impl Input {
         Input {
             cmd: String::new(),
             args: vec![],
-            operator: None,
-            operator_args: vec![],
+            output_target: None,
         }
     }
 
@@ -26,6 +24,7 @@ impl Input {
         }
 
         let mut parsed_input = Input::new();
+        let mut output_target = OutputTarget::new();
 
         if input.len() == 1 {
             parsed_input.cmd = input[0].clone();
@@ -39,24 +38,32 @@ impl Input {
             }
 
             if arg == ">" || arg == "1>" {
-                parsed_input.operator = Some(arg.clone());
+                output_target.operator = arg.clone();
+                output_target.action = Action::Redirect;
                 continue;
             }
 
             if arg == "2>" {
-                parsed_input.operator = Some(arg.clone());
+                output_target.operator = arg.clone();
+                output_target.action = Action::Redirect;
                 continue;
             }
 
             if arg == ">>" || arg == "1>>" {
-                parsed_input.operator = Some(arg.clone());
+                output_target.operator = arg.clone();
+                output_target.action = Action::Append;
                 continue;
             }
 
-            match parsed_input.operator {
-                Some(_) => parsed_input.operator_args.push(arg.clone()),
-                None => parsed_input.args.push(arg.clone()),
+            if output_target.operator.is_empty() {
+                parsed_input.args.push(arg.clone());
+            } else {
+                output_target.args.push(arg.clone());
             }
+        }
+
+        if !output_target.args.is_empty() && !output_target.operator.is_empty() {
+            parsed_input.output_target = Some(output_target);
         }
 
         Some(parsed_input)
@@ -73,17 +80,17 @@ fn tokenize_args(input: &str) -> Vec<String> {
     let mut arg = String::new();
     let mut single_quote = false;
     let mut double_quote = false;
-    let mut backlash = false;
+    let mut backslash = false;
 
     for c in input.chars() {
-        if c == '\\' && !backlash && !single_quote {
-            backlash = true;
+        if c == '\\' && !backslash && !single_quote {
+            backslash = true;
             continue;
         }
 
-        if backlash {
+        if backslash {
             arg.push(c);
-            backlash = false;
+            backslash = false;
             continue;
         }
 
@@ -124,35 +131,35 @@ fn tokenize_args(input: &str) -> Vec<String> {
     args
 }
 
-pub fn handle_stdout(redirect: Redirect, operator: Option<String>, operator_args: Vec<String>) {
+pub fn handle_stdout(redirect: Redirect, output_target: Option<OutputTarget>) {
     let mut output = redirect.stdout.unwrap_or_default();
     let mut err = redirect.stderr.unwrap_or_default();
 
-    if let Some(op) = operator {
-        if op == ">" || op == "1>" {
+    if let Some(ot) = &output_target {
+        if ot.operator == ">" || ot.operator == "1>" {
             if !err.is_empty() {
                 eprintln!("{}", err);
             }
             if !output.is_empty() {
                 output.push('\n');
             }
-            write_to_file(&output, operator_args);
-        } else if op == "2>" {
+            write_to_file(&output, &ot);
+        } else if ot.operator == "2>" {
             if !output.is_empty() {
                 println!("{}", output);
             }
             if !err.is_empty() {
                 err.push('\n');
             }
-            write_to_file(&err, operator_args);
-        } else if op == ">>" || op == "1>>" {
+            write_to_file(&err, &ot);
+        } else if ot.operator == ">>" || ot.operator == "1>>" {
             if !err.is_empty() {
                 eprintln!("{}", err);
             }
             if !output.is_empty() {
                 output.push('\n');
             }
-            write_to_file(&output, operator_args);
+            write_to_file(&output, &ot);
         }
     } else {
         if err.is_empty() {
@@ -163,8 +170,8 @@ pub fn handle_stdout(redirect: Redirect, operator: Option<String>, operator_args
     }
 }
 
-fn append_to_file(output: &str, operator_args: Vec<String>) {
-    let file_path = match operator_args.first() {
+fn write_to_file(output: &str, output_target: &OutputTarget) {
+    let file_path = match output_target.args.first() {
         Some(name) => name,
         None => {
             eprintln!("File not provided");
@@ -183,38 +190,17 @@ fn append_to_file(output: &str, operator_args: Vec<String>) {
         }
     };
 
-    match file.write_all(output.as_bytes()) {
-        Ok(_) => (),
-        Err(e) => {
-            eprintln!("{e}");
+    match output_target.action {
+        Action::Append => {
+            let mut append_fiel = File::create
         }
-    };
-}
-
-fn write_to_file(output: &str, operator_args: Vec<String>) {
-    let file_path = match operator_args.first() {
-        Some(name) => name,
-        None => {
-            eprintln!("File not provided");
-            return;
+        Action::Redirect => {
+            match file.write_all(output.as_bytes()) {
+                Ok(_) => (),
+                Err(e) => {
+                    eprintln!("{e}");
+                }
+            };
         }
-    };
-
-    let mut path = PathBuf::new();
-    path.push(file_path);
-
-    let mut file = match File::create(path) {
-        Ok(file) => file,
-        Err(e) => {
-            eprintln!("{e}");
-            return;
-        }
-    };
-
-    match file.write_all(output.as_bytes()) {
-        Ok(_) => (),
-        Err(e) => {
-            eprintln!("{e}");
-        }
-    };
+    }
 }

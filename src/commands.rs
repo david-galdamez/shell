@@ -7,11 +7,14 @@ use std::{
 use is_executable::is_executable;
 use walkdir::WalkDir;
 
-use crate::{redirect::Redirect, utils::handle_stdout};
+use crate::{
+    redirect::{OutputTarget, Redirect},
+    utils::handle_stdout,
+};
 
 const BUILTINS: [&str; 5] = ["echo", "type", "pwd", "exit", "cd"];
 
-pub fn echo(args: Vec<String>, operator: Option<String>, operator_args: Vec<String>) {
+pub fn echo(args: Vec<String>, output_target: Option<OutputTarget>) {
     let args: Vec<String> = args
         .iter()
         .filter(|a| *a != " ")
@@ -21,15 +24,10 @@ pub fn echo(args: Vec<String>, operator: Option<String>, operator_args: Vec<Stri
     let mut output = Redirect::new();
     output.stdout = Some(format!("{}", args.join(" ")));
 
-    handle_stdout(output, operator, operator_args);
+    handle_stdout(output, output_target);
 }
 
-pub fn type_output(
-    cmd: String,
-    args: Vec<String>,
-    operator: Option<String>,
-    operator_args: Vec<String>,
-) {
+pub fn type_output(cmd: String, args: Vec<String>, output_target: Option<OutputTarget>) {
     let mut output = Redirect::new();
     let arg = match args.first() {
         Some(arg) => arg,
@@ -41,18 +39,13 @@ pub fn type_output(
 
     if BUILTINS.contains(&arg) {
         output.stdout = Some(format!("{} is a shell builtin", arg));
-        handle_stdout(output, operator, operator_args);
+        handle_stdout(output, output_target);
     } else {
-        executables(cmd, args, operator, operator_args);
+        executables(cmd, args, output_target);
     }
 }
 
-pub fn executables(
-    cmd: String,
-    args: Vec<String>,
-    operator: Option<String>,
-    operator_args: Vec<String>,
-) {
+pub fn executables(cmd: String, args: Vec<String>, output_target: Option<OutputTarget>) {
     let path_str = match env::var("PATH").ok() {
         Some(path) => path,
         None => {
@@ -78,7 +71,7 @@ pub fn executables(
                     {
                         let mut output = Redirect::new();
                         output.stdout = Some(format!("{} is {}", arg, entry.path().display()));
-                        handle_stdout(output, operator, operator_args);
+                        handle_stdout(output, output_target);
                         return;
                     }
                 } else if cmd
@@ -87,7 +80,7 @@ pub fn executables(
                         .to_str()
                         .expect("Expected valid file name")
                 {
-                    if let Some(op) = operator {
+                    if let Some(_) = output_target {
                         let command_output = Command::new(entry.file_name())
                             .args(&args)
                             .output()
@@ -107,7 +100,7 @@ pub fn executables(
                                     .to_string(),
                             );
                         }
-                        handle_stdout(output, Some(op), operator_args);
+                        handle_stdout(output, output_target);
                     } else {
                         Command::new(entry.file_name())
                             .args(&args)
@@ -128,17 +121,17 @@ pub fn executables(
         output.stderr = Some(format!("{}: not found", cmd));
     }
 
-    handle_stdout(output, operator, operator_args);
+    handle_stdout(output, output_target);
 }
 
-pub fn pwd(operator: Option<String>, operator_args: Vec<String>) {
+pub fn pwd(output_target: Option<OutputTarget>) {
     let current_dir = match env::current_dir().ok() {
         Some(dir) => dir,
         None => PathBuf::new(),
     };
     let mut output = Redirect::new();
     output.stdout = Some(format!("{}", current_dir.display()));
-    handle_stdout(output, operator, operator_args);
+    handle_stdout(output, output_target);
 }
 
 pub fn cd(arg: &str) {

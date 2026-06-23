@@ -1,8 +1,8 @@
 use std::io::{self, Write};
 
 mod commands;
-mod utils;
 mod redirect;
+mod utils;
 
 fn run() {
     loop {
@@ -24,16 +24,15 @@ fn run() {
         };
         let cmd = input.cmd;
         let args = input.args;
-        let operator = input.operator;
-        let operator_args = input.operator_args;
+        let output_target = input.output_target;
 
         match cmd.as_str() {
             "exit" => break,
-            "echo" => commands::echo(args, operator, operator_args),
+            "echo" => commands::echo(args, output_target),
             "type" => {
-                commands::type_output(cmd, args, operator, operator_args);
+                commands::type_output(cmd, args, output_target);
             }
-            "pwd" => commands::pwd(operator, operator_args),
+            "pwd" => commands::pwd(output_target),
             "cd" => {
                 let arg = match args.first() {
                     Some(arg) => arg,
@@ -42,7 +41,7 @@ fn run() {
 
                 commands::cd(arg);
             }
-            _ => commands::executables(cmd, args, operator, operator_args),
+            _ => commands::executables(cmd, args, output_target),
         }
     }
 }
