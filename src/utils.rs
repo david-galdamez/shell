@@ -53,6 +53,11 @@ impl Input {
                 continue;
             }
 
+            if arg == "|" {
+                output_target.operator = arg.clone();
+                continue;
+            }
+
             if output_target.operator.is_empty() {
                 parsed_input.args.push(arg.clone());
             } else {

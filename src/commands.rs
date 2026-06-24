@@ -1,7 +1,7 @@
 use std::{
     env,
     path::{Path, PathBuf},
-    process::Command,
+    process::{Command, Stdio},
 };
 
 use is_executable::is_executable;
@@ -80,27 +80,103 @@ pub fn executables(cmd: String, args: Vec<String>, output_target: Option<OutputT
                         .to_str()
                         .expect("Expected valid file name")
                 {
-                    if output_target.is_some() {
-                        let command_output = Command::new(entry.file_name())
-                            .args(&args)
-                            .output()
-                            .expect("Failed to execute process");
+                    if let Some(ot) = output_target {
+                        match ot.operator.as_str() {
+                            "|" => {
+                                let mut command_1 = match Command::new(entry.file_name())
+                                    .args(&args)
+                                    .stdout(Stdio::piped())
+                                    .spawn()
+                                {
+                                    Ok(cmd) => cmd,
+                                    Err(e) => {
+                                        eprintln!("{e}");
+                                        return;
+                                    }
+                                };
 
-                        let mut output = Redirect::new();
-                        output.stdout = Some(
-                            String::from_utf8_lossy(&command_output.stdout)
-                                .trim()
-                                .to_string(),
-                        );
+                                let stdout_1 = match command_1.stdout.take() {
+                                    Some(stdout) => stdout,
+                                    None => {
+                                        eprintln!("Failed to capture stdout of first command");
+                                        return;
+                                    }
+                                };
+                                let new_command = match ot.args.first() {
+                                    Some(command) => command,
+                                    None => {
+                                        eprintln!("You have to pass a new command");
+                                        return;
+                                    }
+                                };
 
-                        if !command_output.status.success() {
-                            output.stderr = Some(
-                                String::from_utf8_lossy(&command_output.stderr)
-                                    .trim()
-                                    .to_string(),
-                            );
+                                let command_2 = match Command::new(new_command)
+                                    .args(&ot.args[1..])
+                                    .stdin(Stdio::from(stdout_1))
+                                    .stdout(Stdio::piped())
+                                    .spawn()
+                                {
+                                    Ok(cmd) => cmd,
+                                    Err(e) => {
+                                        eprintln!("{e}");
+                                        return;
+                                    }
+                                };
+
+                                let output_2 = command_2
+                                    .wait_with_output()
+                                    .expect("Failed to capture stdout of second command");
+
+                                let _ = command_1.kill();
+                                let _ = command_1.wait();
+                                eprintln!(
+                                    "DEBUG stdout: {:?}",
+                                    String::from_utf8_lossy(&output_2.stdout)
+                                );
+                                eprintln!(
+                                    "DEBUG stderr: {:?}",
+                                    String::from_utf8_lossy(&output_2.stderr)
+                                );
+                                eprintln!("DEBUG status: {:?}", output_2.status);
+
+                                let mut output = Redirect::new();
+                                output.stdout = Some(
+                                    String::from_utf8_lossy(&output_2.stdout)
+                                        .trim_end_matches("\n")
+                                        .to_string(),
+                                );
+                                if !output_2.status.success() {
+                                    output.stderr = Some(
+                                        String::from_utf8_lossy(&output_2.stderr)
+                                            .trim_end_matches("\n")
+                                            .to_string(),
+                                    )
+                                }
+                                handle_stdout(output, None);
+                            }
+                            _ => {
+                                let command_output = Command::new(entry.file_name())
+                                    .args(&args)
+                                    .output()
+                                    .expect("Failed to execute process");
+
+                                let mut output = Redirect::new();
+                                output.stdout = Some(
+                                    String::from_utf8_lossy(&command_output.stdout)
+                                        .trim()
+                                        .to_string(),
+                                );
+
+                                if !command_output.status.success() {
+                                    output.stderr = Some(
+                                        String::from_utf8_lossy(&command_output.stderr)
+                                            .trim()
+                                            .to_string(),
+                                    );
+                                }
+                                handle_stdout(output, Some(ot));
+                            }
                         }
-                        handle_stdout(output, output_target);
                     } else {
                         Command::new(entry.file_name())
                             .args(&args)
