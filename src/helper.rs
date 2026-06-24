@@ -49,7 +49,7 @@ impl Completer for ShellHelper {
         &self,
         line: &str,
         pos: usize,
-        ctx: &rustyline::Context<'_>,
+        _ctx: &rustyline::Context<'_>,
     ) -> rustyline::Result<(usize, Vec<Self::Candidate>)> {
         let (word_start, prefix) = extract_word(line, pos, None, |c: char| c == ' ');
         let is_first_word = line[..word_start].trim().is_empty();
@@ -64,10 +64,10 @@ impl Completer for ShellHelper {
             let candidates = self.get_canditates(prefix)?;
             Ok((0, candidates))
         } else {
-            let (start, mut pairs) = self.filenames.complete(line, pos, ctx)?;
+            let (start, mut pairs) = self.filenames.complete(line, pos, _ctx)?;
             let mut candidates = Vec::new();
             for pair in &mut pairs {
-                if !pair.replacement.ends_with('/') && !pair.replacement.ends_with(' ') {
+                if !pair.replacement.ends_with(' ') {
                     candidates.push(pair.replacement.clone());
                 }
             }
@@ -91,7 +91,11 @@ impl Completer for ShellHelper {
         let replacement = if has_more_candidates {
             elected.to_string()
         } else {
-            format!("{} ", elected)
+            if !elected.ends_with('/') {
+                format!("{} ", elected)
+            } else {
+                elected.to_string()
+            }
         };
 
         let end = line.pos();
