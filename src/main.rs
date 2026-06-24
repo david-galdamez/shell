@@ -1,4 +1,4 @@
-use rustyline::{Editor, Result};
+use rustyline::{Config, Editor, Result};
 
 use crate::helper::ShellHelper;
 
@@ -10,7 +10,10 @@ mod executables;
 
 fn run() -> Result<()> {
     let helper = ShellHelper::default();
-    let mut rl: Editor<ShellHelper, _> = Editor::new()?;
+    let config = Config::builder()
+        .completion_type(rustyline::CompletionType::List) // for list completition candidates
+        .build();
+    let mut rl: Editor<ShellHelper, _> = Editor::with_config(config)?;
     rl.set_helper(Some(helper));
     loop {
         let readline = rl.readline("$ ");

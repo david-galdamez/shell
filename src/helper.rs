@@ -21,14 +21,13 @@ impl ShellHelper {
                 bin.file_name().and_then(|name| {
                     let name = name.to_string_lossy();
                     if name.starts_with(prefix) {
-                        let mut name = name.to_string();
-                        name.push(' ');
-                        Some(name)
+                        Some(name.to_string())
                     } else {
                         None
                     }
                 })
-            }).collect();
+            })
+            .collect();
 
         candidates.sort();
         Ok(candidates)
@@ -44,14 +43,39 @@ impl Completer for ShellHelper {
         pos: usize,
         _ctx: &rustyline::Context<'_>,
     ) -> rustyline::Result<(usize, Vec<Self::Candidate>)> {
-        if line == "ech" && pos == line.len() {
-            return Ok((0, vec!["echo ".to_string()]));
-        } else if line == "exi" && pos == line.len() {
-            return Ok((0, vec!["exit ".to_string()]));
+
+        let prefix = line;
+
+        if prefix == "ech" && pos == line.len() {
+            return Ok((0, vec!["echo".to_string()]));
+        } else if prefix == "exi" && pos == line.len() {
+            return Ok((0, vec!["exit".to_string()]));
         }
 
-       let candidates = self.get_canditates(line)?;
+        let candidates = self.get_canditates(prefix)?;
         Ok((0, candidates))
+    }
+
+    fn update(
+        &self,
+        line: &mut rustyline::line_buffer::LineBuffer,
+        start: usize,
+        elected: &str,
+        cl: &mut rustyline::Changeset,
+    ) {
+        //check if there are other candidates
+        let has_more_candidates = self.get_canditates(elected)
+            .map(|candidate| candidate.iter().any(|c| c != elected))
+            .unwrap_or(false);
+
+        let replacement = if has_more_candidates {
+            elected.to_string()
+        } else {
+            format!("{} ", elected)
+        };
+
+        let end = line.pos();
+        line.replace(start..end, &replacement, cl);
     }
 }
 
