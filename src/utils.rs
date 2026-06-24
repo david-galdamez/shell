@@ -80,36 +80,36 @@ fn tokenize_args(input: &str) -> Vec<String> {
     let mut double_quote = false;
     let mut backslash = false;
 
-    for c in input.chars() {
+    input.chars().for_each(|c| {
         if c == '\\' && !backslash && !single_quote {
             backslash = true;
-            continue;
+            return;
         }
 
         if backslash {
             arg.push(c);
             backslash = false;
-            continue;
+            return;
         }
 
         if c == '"' && !double_quote && !single_quote {
             double_quote = true;
-            continue;
+            return;
         }
 
         if c == '"' && double_quote && !single_quote {
             double_quote = false;
-            continue;
+            return;
         }
 
         if c == '\'' && !single_quote && !double_quote {
             single_quote = true;
-            continue;
+            return;
         }
 
         if c == '\'' && single_quote && !double_quote {
             single_quote = false;
-            continue;
+            return;
         }
 
         if c == ' ' && !single_quote && !double_quote {
@@ -117,10 +117,10 @@ fn tokenize_args(input: &str) -> Vec<String> {
                 args.push(arg.to_string());
                 arg.clear();
             }
-            continue;
+            return;
         }
         arg.push(c);
-    }
+    });
 
     if !arg.is_empty() {
         args.push(arg);

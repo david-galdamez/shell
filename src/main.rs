@@ -6,6 +6,7 @@ mod commands;
 mod helper;
 mod redirect;
 mod utils;
+mod executables;
 
 fn run() -> Result<()> {
     let helper = ShellHelper::default();
