@@ -1,3 +1,5 @@
+use std::{env, path::Path};
+
 use rustyline::{
     Helper,
     completion::{Completer, FilenameCompleter, extract_word},
@@ -5,6 +7,7 @@ use rustyline::{
     hint::Hinter,
     validate::Validator,
 };
+use walkdir::WalkDir;
 
 use crate::executables::Executables;
 
@@ -38,6 +41,40 @@ impl ShellHelper {
             .collect();
 
         candidates.sort();
+        Ok(candidates)
+    }
+
+    fn get_dir_candidates(&self, prefix: &str) -> rustyline::Result<Vec<String>> {
+        let path_str = env::var("PATH").expect("PATH variable not found in env");
+        let mut directories = Vec::new();
+
+        env::split_paths(&path_str).for_each(|path| {
+            if Path::exists(&path) {
+                WalkDir::new(&path)
+                    .into_iter()
+                    .filter_map(|e| e.ok())
+                    .for_each(|entry| {
+                        if !Path::is_dir(entry.path()) {
+                            return;
+                        }
+
+                        directories.push(entry.into_path());
+                    });
+            }
+        });
+
+        directories.sort();
+        let candidates = directories.iter()
+            .filter_map(|dir| {
+                dir.file_name().and_then(|name| {
+                    let name = name.to_string_lossy();
+                    if name.starts_with(prefix) {
+                        Some(name.to_string())
+                    } else {
+                        None
+                    }
+                })
+            }).collect();
         Ok(candidates)
     }
 }
@@ -83,12 +120,29 @@ impl Completer for ShellHelper {
         cl: &mut rustyline::Changeset,
     ) {
         //check if there are other candidates
-        let has_more_candidates = self
+        let has_more_exec_candidates = self
             .get_canditates(elected)
             .map(|candidate| candidate.iter().any(|c| c != elected))
             .unwrap_or(false);
 
-        let replacement = if has_more_candidates {
+        let has_more_dir_candidates = self
+            .get_dir_candidates(elected)
+            .map(|candidate| candidate.iter().any(|c| c != elected))
+            .unwrap_or(false);
+
+        let matching_files: Vec<_> = WalkDir::new(".")
+            .into_iter()
+            .filter_map(|e| e.ok())
+            .filter(|e| {
+                e.file_name()
+                .to_string_lossy()
+                    .starts_with(elected.trim_start_matches("./"))
+            }).collect();
+
+        let has_more_file_candidates = matching_files.len() > 1;
+
+        //now if we have more files candidates doesn't put the trealling space
+        let replacement = if has_more_exec_candidates || has_more_dir_candidates || has_more_file_candidates {
             elected.to_string()
         } else {
             if !elected.ends_with('/') {

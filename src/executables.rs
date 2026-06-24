@@ -9,7 +9,7 @@ pub struct Executables {
 }
 
 impl Executables {
-    // we iterate over the entries of the path like in the executable commando and we save the
+    // we iterate over the entries of the path like in the executable command and we save the
     // executables in an String Vec, we save the PathBuf of the entry
     pub fn new() -> Result<Self, io::Error> {
         let path_str = env::var("PATH").expect("PATH variable not found in env");
