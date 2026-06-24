@@ -12,7 +12,7 @@ use crate::{
     utils::handle_stdout,
 };
 
-const BUILTINS: [&str; 5] = ["echo", "type", "pwd", "exit", "cd"];
+const BUILTINS: [&str; 6] = ["echo", "type", "pwd", "exit", "cd", "complete"];
 
 pub fn echo(args: Vec<String>, output_target: Option<OutputTarget>) {
     let args: Vec<String> = args
